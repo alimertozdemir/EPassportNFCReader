@@ -73,7 +73,8 @@
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_marginBottom="40dp"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:visibility="gone" >
 
         <ImageView
             android:id="@+id/image_nfc"
@@ -82,6 +83,35 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="@dimen/activity_vertical_margin"
             android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:src="@drawable/contactless" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Tap ID Card / Passport via NFC..." />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom|center"
+        android:layout_marginBottom="40dp"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/btn_scan"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="START SCAN"
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/contactless" />
+
+        <Button
+            android:id="@+id/btn_read"
+            android:layout_width="120dp"
+            android:layout_height="wrap_content"
+            android:text="READ ID CARD"
+            android:layout_gravity="center_horizontal"
             android:src="@drawable/contactless" />
     </LinearLayout>
 

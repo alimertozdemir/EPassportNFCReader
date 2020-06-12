@@ -15,6 +15,7 @@
  */
 package com.alimert.passportreader.ui;
 
+import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -29,12 +30,15 @@ import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.alimert.library.CaptureActivity;
 import com.alimert.util.DateUtil;
 import com.alimert.util.ImageUtil;
 import com.alimert.util.StringUtil;
@@ -64,13 +68,15 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static com.alimert.library.CaptureActivity.MRZ_RESULT;
 import static org.jmrtd.PassportService.DEFAULT_MAX_BLOCKSIZE;
 import static org.jmrtd.PassportService.NORMAL_MAX_TRANCEIVE_LENGTH;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnClickListener {
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
+    private final static int APP_CAMERA_ACTIVITY_REQUEST_CODE = 150;
     private final static String KEY_PASSPORT_NUMBER = "passportNumber";
     private final static String KEY_EXPIRATION_DATE = "expirationDate";
     private final static String KEY_BIRTH_DATE = "birthDate";
@@ -80,6 +86,7 @@ public class MainActivity extends AppCompatActivity {
     private View mainLayout;
     private View loadingLayout;
     private View imageLayout;
+    private Button scan, read;
 
     private String passportNumber, expirationDate , birthDate;
 
@@ -94,24 +101,65 @@ public class MainActivity extends AppCompatActivity {
         mainLayout = findViewById(R.id.main_layout);
         loadingLayout = findViewById(R.id.loading_layout);
         imageLayout = findViewById(R.id.image_layout);
-
-        readCard();
+        scan = findViewById(R.id.btn_scan);
+        read = findViewById(R.id.btn_read);
+        scan.setOnClickListener(this);
+        read.setOnClickListener(this);
 
     }
 
-    private void readCard() {
-
+    private void setMrzData(MRZInfo mrzInfo) {
         adapter = NfcAdapter.getDefaultAdapter(this);
+        mainLayout.setVisibility(View.GONE);
         imageLayout.setVisibility(View.VISIBLE);
+
+        passportNumber = mrzInfo.getDocumentNumber();
+        expirationDate = mrzInfo.getDateOfExpiry();
+        birthDate = mrzInfo.getDateOfBirth();
+    }
+
+    private void readCard() {
 
         String mrzData = "I<TURA44P213021<53454478482<<<" +
                 "9001014M2901155TUR<<<<<<<<<<<2" +
                 "DOE<<JOHN<JIM<<<<<<<<<<<<<";
 
         MRZInfo mrzInfo = new MRZInfo(mrzData);
-        passportNumber = mrzInfo.getDocumentNumber();
-        expirationDate = mrzInfo.getDateOfExpiry();
-        birthDate = mrzInfo.getDateOfBirth();
+        setMrzData(mrzInfo);
+    }
+
+    private void scanCard() {
+        Intent intent = new Intent(this, CaptureActivity.class);
+        startActivityForResult(intent, APP_CAMERA_ACTIVITY_REQUEST_CODE);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK) {
+            switch (requestCode) {
+                case APP_CAMERA_ACTIVITY_REQUEST_CODE:
+                    MRZInfo mrzInfo = (MRZInfo) data.getSerializableExtra(MRZ_RESULT);
+                    setMrzData(mrzInfo);
+                    break;
+                default:
+                    break;
+            }
+        }
+    }
+
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.btn_scan:
+                scanCard();
+                break;
+            case R.id.btn_read:
+                readCard();
+                break;
+            default:
+                break;
+        }
     }
 
     @Override
