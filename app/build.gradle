@@ -1,0 +1,31 @@
+apply plugin: 'com.android.application'
+
+android {
+    compileSdkVersion 29
+
+    defaultConfig {
+        applicationId "com.alimert.passportreader"
+        minSdkVersion 15
+        targetSdkVersion 29
+        versionCode 15
+        versionName "2.0"
+        multiDexEnabled = true
+    }
+    packagingOptions {
+        exclude 'META-INF/LICENSE'
+        exclude 'META-INF/NOTICE'
+    }
+    dexOptions {
+        javaMaxHeapSize "4g"
+    }
+}
+
+dependencies {
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'com.google.android.material:material:1.1.0'
+    implementation 'org.jmrtd:jmrtd:0.7.18'
+    implementation 'net.sf.scuba:scuba-sc-android:0.0.20'
+    implementation 'com.madgag.spongycastle:prov:1.58.0.0'
+    implementation 'edu.ucar:jj2000:5.2'
+    implementation 'com.github.mhshams:jnbis:1.1.0'
+}
