@@ -325,8 +325,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void setResultDatasToView(MRZInfo mrzInfo) {
 
-        String result  = "NAME: " + mrzInfo.getSecondaryIdentifier().replace("<", " ") + "\n";
-        result += "SURNAME: " + mrzInfo.getPrimaryIdentifier().replace("<", " ") + "\n";
+        String result  = "NAME: " + mrzInfo.getSecondaryIdentifier().replace("<", " ").trim() + "\n";
+        result += "SURNAME: " + mrzInfo.getPrimaryIdentifier().replace("<", " ").trim() + "\n";
         result += "PERSONAL NUMBER: " + mrzInfo.getPersonalNumber() + "\n";
         result += "GENDER: " + mrzInfo.getGender().toString() + "\n";
         result += "BIRTH DATE: " + DateUtil.convertFromMrzDate(mrzInfo.getDateOfBirth()) + "\n";
