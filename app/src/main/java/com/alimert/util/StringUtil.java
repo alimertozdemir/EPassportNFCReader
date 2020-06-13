@@ -1,16 +1,10 @@
 package com.alimert.util;
 
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-/**
- * @author AliMertOzdemir
- * @class StringUtil
- * @created 12.06.2020
- * @copyright © GARANTI TEKNOLOJI
- */
 public class StringUtil {
+
+    public static final String TYPE_PASSPORT = "P<";
+
+    public static final String TYPE_ID_CARD = "I<";
 
     public static String exceptionStack(Throwable exception) {
         StringBuilder s = new StringBuilder();

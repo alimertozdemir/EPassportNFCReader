@@ -99,20 +99,25 @@
         android:orientation="vertical">
 
         <Button
-            android:id="@+id/btn_scan"
-            android:layout_width="120dp"
+            android:id="@+id/btn_scan_id_card"
+            android:layout_width="140dp"
             android:layout_height="wrap_content"
-            android:text="START SCAN"
-            android:layout_gravity="center_horizontal"
-            android:src="@drawable/contactless" />
+            android:text="SCAN ID CARD"
+            android:layout_gravity="center_horizontal" />
+
+        <Button
+            android:id="@+id/btn_scan_passport"
+            android:layout_width="140dp"
+            android:layout_height="wrap_content"
+            android:text="SCAN PASSPORT"
+            android:layout_gravity="center_horizontal" />
 
         <Button
             android:id="@+id/btn_read"
-            android:layout_width="120dp"
+            android:layout_width="140dp"
             android:layout_height="wrap_content"
             android:text="READ ID CARD"
-            android:layout_gravity="center_horizontal"
-            android:src="@drawable/contactless" />
+            android:layout_gravity="center_horizontal" />
     </LinearLayout>
 
 </FrameLayout>

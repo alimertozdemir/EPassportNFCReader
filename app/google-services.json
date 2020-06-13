@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "143242659324",
+    "firebase_url": "https://epassportnfcreader.firebaseio.com",
+    "project_id": "epassportnfcreader",
+    "storage_bucket": "epassportnfcreader.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:143242659324:android:aef539e39ac9868527de79",
+        "android_client_info": {
+          "package_name": "com.alimert.passportreader"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "143242659324-b20on44sidobkovm2kn2taeoa9f47i4d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDxR4WCMs9HNJnPeO6ks0x7DFU9GAS-ohM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "143242659324-b20on44sidobkovm2kn2taeoa9f47i4d.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
