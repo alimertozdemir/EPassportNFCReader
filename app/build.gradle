@@ -18,10 +18,14 @@ android {
     dexOptions {
         javaMaxHeapSize "4g"
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
 }
 
 dependencies {
-    implementation project(':library')
     implementation 'androidx.multidex:multidex:2.0.1'
     implementation 'com.google.android.material:material:1.1.0'
     implementation 'org.jmrtd:jmrtd:0.7.18'
@@ -29,4 +33,11 @@ dependencies {
     implementation 'com.madgag.spongycastle:prov:1.58.0.0'
     implementation 'edu.ucar:jj2000:5.2'
     implementation 'com.github.mhshams:jnbis:1.1.0'
+
+    implementation 'com.google.android.gms:play-services-mlkit-text-recognition:16.0.0'
+
+    implementation 'androidx.camera:camera-core:1.0.0-beta05'
+    implementation 'androidx.camera:camera-camera2:1.0.0-beta05'
+    implementation 'androidx.appcompat:appcompat:1.1.0'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
 }

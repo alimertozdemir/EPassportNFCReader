@@ -5,12 +5,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-/**
- * @author AliMertOzdemir
- * @class DateUtil
- * @created 12.06.2020
- * @copyright © GARANTI TEKNOLOJI
- */
 public class DateUtil {
 
     public static Date stringToDate(String dateStr, DateFormat dateFormat) {
