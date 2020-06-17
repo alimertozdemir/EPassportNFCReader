@@ -2,4 +2,4 @@
 
 - MRZ Data Scan with Google MLKit
 
-![Sample](https://github.com/alimertozdemir/EPassportNFCReader/blob/master/sample/sample.gif)
+![Sample](https://github.com/alimertozdemir/EPassportNFCReader/blob/master/sample/sample.gif =200x80)
