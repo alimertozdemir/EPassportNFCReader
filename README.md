@@ -2,4 +2,4 @@
 
 - MRZ Data Scan with Google MLKit
 
-<img src="/sample/sample.gif" alt="Sample" width="300"/>
+<img src="/sample/sample.gif" alt="Sample" width="350"/>
