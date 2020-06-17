@@ -37,9 +37,9 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.alimert.passportreader.R;
 import com.alimert.passportreader.model.DocType;
-import com.alimert.util.DateUtil;
-import com.alimert.util.ImageUtil;
-import com.alimert.util.StringUtil;
+import com.alimert.passportreader.util.DateUtil;
+import com.alimert.passportreader.util.ImageUtil;
+import com.alimert.passportreader.util.StringUtil;
 import com.google.android.material.snackbar.Snackbar;
 
 import net.sf.scuba.smartcards.CardFileInputStream;
@@ -117,9 +117,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private void readCard() {
 
-        String mrzData = "I<TURA44P213021<53454478482<<<" +
-                "9001014M2901155TUR<<<<<<<<<<<2" +
-                "DOE<<JOHN<JIM<<<<<<<<<<<<<";
+        String mrzData = "P<GBPANGELA<ZOE<<SMITH<<<<<<<<<<<<<<<<<<<<<<" +
+                         "9990727768GBR7308196F2807041<<<<<<<<<<<<<<02";
 
         MRZInfo mrzInfo = new MRZInfo(mrzData);
         setMrzData(mrzInfo);

@@ -9,11 +9,11 @@ import android.util.Log;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.alimert.mlkit.camera.CameraSource;
-import com.alimert.mlkit.camera.CameraSourcePreview;
-import com.alimert.mlkit.other.GraphicOverlay;
-import com.alimert.mlkit.text.TextRecognitionProcessor;
 import com.alimert.passportreader.R;
+import com.alimert.passportreader.mlkit.camera.CameraSource;
+import com.alimert.passportreader.mlkit.camera.CameraSourcePreview;
+import com.alimert.passportreader.mlkit.other.GraphicOverlay;
+import com.alimert.passportreader.mlkit.text.TextRecognitionProcessor;
 import com.alimert.passportreader.model.DocType;
 
 import org.jmrtd.lds.icao.MRZInfo;

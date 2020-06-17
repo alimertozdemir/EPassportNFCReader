@@ -7,7 +7,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".ui.CaptureActivity">
 
-    <com.alimert.mlkit.camera.CameraSourcePreview
+    <com.alimert.passportreader.mlkit.camera.CameraSourcePreview
         android:id="@+id/camera_source_preview"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -16,12 +16,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
 
-        <com.alimert.mlkit.other.GraphicOverlay
+        <com.alimert.passportreader.mlkit.other.GraphicOverlay
             android:id="@+id/graphics_overlay"
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
 
-    </com.alimert.mlkit.camera.CameraSourcePreview>
+    </com.alimert.passportreader.mlkit.camera.CameraSourcePreview>
 
     <View
         android:layout_width="match_parent"
