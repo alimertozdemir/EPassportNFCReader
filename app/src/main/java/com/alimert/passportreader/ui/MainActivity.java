@@ -1,29 +1,18 @@
-/*
- * Copyright 2016 - 2020 Anton Tananaev (anton.tananaev@gmail.com)
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.alimert.passportreader.ui;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.net.Uri;
 import android.nfc.NfcAdapter;
 import android.nfc.Tag;
 import android.nfc.tech.IsoDep;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
 import android.view.View;
@@ -31,14 +20,18 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
 
 import com.alimert.passportreader.R;
 import com.alimert.passportreader.model.DocType;
+import com.alimert.passportreader.util.AppUtil;
 import com.alimert.passportreader.util.DateUtil;
 import com.alimert.passportreader.util.ImageUtil;
+import com.alimert.passportreader.util.PermissionUtil;
 import com.alimert.passportreader.util.StringUtil;
 import com.google.android.material.snackbar.Snackbar;
 
@@ -74,7 +67,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
     private static final String TAG = MainActivity.class.getSimpleName();
 
-    private final static int APP_CAMERA_ACTIVITY_REQUEST_CODE = 150;
+    private static final int APP_CAMERA_ACTIVITY_REQUEST_CODE = 150;
+    private static final int APP_SETTINGS_ACTIVITY_REQUEST_CODE = 550;
 
     private NfcAdapter adapter;
 
@@ -82,8 +76,11 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private View loadingLayout;
     private View imageLayout;
     private Button scanIdCard, scanPassport, read;
+    private TextView tvResult;
+    private ImageView ivPhoto;
 
     private String passportNumber, expirationDate , birthDate;
+    private DocType docType;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -96,6 +93,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         mainLayout = findViewById(R.id.main_layout);
         loadingLayout = findViewById(R.id.loading_layout);
         imageLayout = findViewById(R.id.image_layout);
+        ivPhoto = findViewById(R.id.view_photo);
+        tvResult = findViewById(R.id.text_result);
         scanIdCard = findViewById(R.id.btn_scan_id_card);
         scanIdCard.setOnClickListener(this);
         scanPassport = findViewById(R.id.btn_scan_passport);
@@ -124,7 +123,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         setMrzData(mrzInfo);
     }
 
-    private void scanDocument(DocType docType) {
+    private void openCameraActivity() {
         Intent intent = new Intent(this, CaptureActivity.class);
         intent.putExtra(DOC_TYPE, docType);
         startActivityForResult(intent, APP_CAMERA_ACTIVITY_REQUEST_CODE);
@@ -153,10 +152,12 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     public void onClick(View view) {
         switch (view.getId()) {
             case R.id.btn_scan_id_card:
-                scanDocument(DocType.ID_CARD);
+                docType = DocType.ID_CARD;
+                requestPermissionForCamera();
                 break;
             case R.id.btn_scan_passport:
-                scanDocument(DocType.PASSPORT);
+                docType = DocType.PASSPORT;
+                requestPermissionForCamera();
                 break;
             case R.id.btn_read:
                 readCard();
@@ -228,8 +229,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         protected Exception doInBackground(Void... params) {
-            try {
 
+            try {
                 CardService cardService = CardService.getInstance(isoDep);
                 cardService.open();
 
@@ -299,12 +300,9 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             loadingLayout.setVisibility(View.GONE);
 
             if (result == null) {
-
                 MRZInfo mrzInfo = dg1File.getMRZInfo();
-
                 setImage(bitmap);
                 setResultDatasToView(mrzInfo);
-
             } else {
                 Snackbar.make(mainLayout, StringUtil.exceptionStack(result), Snackbar.LENGTH_LONG).show();
             }
@@ -318,7 +316,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             int targetHeight = (int) (bitmap.getHeight() * ratio);
             int targetWidth = (int) (bitmap.getWidth() * ratio);
             bitmap = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, false);
-            ((ImageView) findViewById(R.id.view_photo)).setImageBitmap(bitmap);
+            ivPhoto.setImageBitmap(bitmap);
         }
     }
 
@@ -343,12 +341,45 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         result += "DOC TYPE: " + documentType + "\n";
         result += "ISSUER AUTHORITY: " + mrzInfo.getIssuingState() + "\n";
 
-        ((TextView) findViewById(R.id.text_result)).setText(result);
+        tvResult.setText(result);
     }
 
     private void clearViews() {
-        ((ImageView) findViewById(R.id.view_photo)).setImageBitmap(null);
-        ((TextView) findViewById(R.id.text_result)).setText("");
+        ivPhoto.setImageBitmap(null);
+        tvResult.setText("");
+    }
+
+
+    private void requestPermissionForCamera() {
+        String[] permissions = { Manifest.permission.CAMERA };
+        boolean isPermissionGranted = PermissionUtil.hasPermissions(this, permissions);
+
+        if (!isPermissionGranted) {
+            AppUtil.showAlertDialog(this, getString(R.string.permission_title), getString(R.string.permission_description), getString(R.string.button_ok), false, (dialogInterface, i) -> ActivityCompat.requestPermissions(this, permissions, PermissionUtil.REQUEST_CODE_MULTIPLE_PERMISSIONS));
+        } else {
+            openCameraActivity();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == PermissionUtil.REQUEST_CODE_MULTIPLE_PERMISSIONS) {
+            int result = grantResults[0];
+            if (result == PackageManager.PERMISSION_DENIED) {
+                if (!PermissionUtil.showRationale(this, permissions[0])) {
+                    Intent intent = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    Uri uri = Uri.fromParts("package", getPackageName(), null);
+                    intent.setData(uri);
+                    startActivityForResult(intent, APP_SETTINGS_ACTIVITY_REQUEST_CODE);
+                } else {
+                    requestPermissionForCamera();
+                }
+            } else if (result == PackageManager.PERMISSION_GRANTED) {
+                openCameraActivity();
+            }
+        }
     }
 
 }

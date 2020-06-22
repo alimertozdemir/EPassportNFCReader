@@ -3,7 +3,7 @@
     package="com.alimert.passportreader">
 
     <uses-permission android:name="android.permission.NFC" />
-    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission-sdk-23 android:name="android.permission.CAMERA" />
 
     <uses-feature android:name="android.hardware.nfc" />
     <uses-feature android:name="android.hardware.camera" />
