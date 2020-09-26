@@ -6,7 +6,6 @@ import android.util.Log;
 
 import androidx.annotation.NonNull;
 
-import com.alimert.passportreader.util.StringUtil;
 import com.alimert.passportreader.mlkit.other.FrameMetadata;
 import com.alimert.passportreader.mlkit.other.GraphicOverlay;
 import com.google.android.gms.tasks.OnFailureListener;
@@ -33,6 +32,10 @@ public class TextRecognitionProcessor {
     private ResultListener resultListener;
 
     private String scannedTextBuffer;
+
+    public static final String TYPE_PASSPORT = "P<";
+
+    public static final String TYPE_ID_CARD = "I<";
 
     // Whether we should ignore process(). This is usually caused by feeding input data faster than
     // the model can handle.
@@ -98,9 +101,9 @@ public class TextRecognitionProcessor {
         GraphicOverlay.Graphic textGraphic = new TextGraphic(graphicOverlay, element, Color.GREEN);
         scannedTextBuffer += element.getText();
         String docPrefix;
-        if(scannedTextBuffer.contains(StringUtil.TYPE_PASSPORT) || scannedTextBuffer.contains(StringUtil.TYPE_ID_CARD)) {
+        if(scannedTextBuffer.contains(TYPE_PASSPORT) || scannedTextBuffer.contains(TYPE_ID_CARD)) {
             graphicOverlay.add(textGraphic);
-            docPrefix = scannedTextBuffer.contains(StringUtil.TYPE_PASSPORT) ? StringUtil.TYPE_PASSPORT : StringUtil.TYPE_ID_CARD;
+            docPrefix = scannedTextBuffer.contains(TYPE_PASSPORT) ? TYPE_PASSPORT : TYPE_ID_CARD;
             scannedTextBuffer = scannedTextBuffer.substring(scannedTextBuffer.indexOf(docPrefix));
             finishScanning(scannedTextBuffer);
         }

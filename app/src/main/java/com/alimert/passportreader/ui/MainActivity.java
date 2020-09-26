@@ -13,7 +13,6 @@ import android.nfc.tech.IsoDep;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.Settings;
-import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -27,12 +26,15 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
 import com.alimert.passportreader.R;
+import com.alimert.passportreader.model.AdditionalPersonDetails;
 import com.alimert.passportreader.model.DocType;
+import com.alimert.passportreader.model.EDocument;
+import com.alimert.passportreader.model.PersonDetails;
 import com.alimert.passportreader.util.AppUtil;
 import com.alimert.passportreader.util.DateUtil;
+import com.alimert.passportreader.util.Image;
 import com.alimert.passportreader.util.ImageUtil;
 import com.alimert.passportreader.util.PermissionUtil;
-import com.alimert.passportreader.util.StringUtil;
 import com.google.android.material.snackbar.Snackbar;
 
 import net.sf.scuba.smartcards.CardFileInputStream;
@@ -42,17 +44,23 @@ import org.jmrtd.BACKey;
 import org.jmrtd.BACKeySpec;
 import org.jmrtd.PassportService;
 import org.jmrtd.lds.CardSecurityFile;
+import org.jmrtd.lds.DisplayedImageInfo;
 import org.jmrtd.lds.PACEInfo;
 import org.jmrtd.lds.SecurityInfo;
+import org.jmrtd.lds.icao.DG11File;
+import org.jmrtd.lds.icao.DG15File;
 import org.jmrtd.lds.icao.DG1File;
 import org.jmrtd.lds.icao.DG2File;
+import org.jmrtd.lds.icao.DG3File;
+import org.jmrtd.lds.icao.DG5File;
+import org.jmrtd.lds.icao.DG7File;
 import org.jmrtd.lds.icao.MRZInfo;
 import org.jmrtd.lds.iso19794.FaceImageInfo;
 import org.jmrtd.lds.iso19794.FaceInfo;
+import org.jmrtd.lds.iso19794.FingerImageInfo;
+import org.jmrtd.lds.iso19794.FingerInfo;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.InputStream;
+import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -117,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private void readCard() {
 
         String mrzData = "P<GBPANGELA<ZOE<<SMITH<<<<<<<<<<<<<<<<<<<<<<" +
-                         "9990727768GBR7308196F2807041<<<<<<<<<<<<<<02";
+                        "9990727768GBR7308196F2807041<<<<<<<<<<<<<<02";
 
         MRZInfo mrzInfo = new MRZInfo(mrzData);
         setMrzData(mrzInfo);
@@ -222,10 +230,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             this.bacKey = bacKey;
         }
 
-        private DG1File dg1File;
-        private DG2File dg2File;
-        private String imageBase64;
-        private Bitmap bitmap;
+        EDocument eDocument = new EDocument();
+        DocType docType = DocType.OTHER;
+        PersonDetails personDetails = new PersonDetails();
+        AdditionalPersonDetails additionalPersonDetails = new AdditionalPersonDetails();
 
         @Override
         protected Exception doInBackground(Void... params) {
@@ -262,31 +270,143 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     }
                 }
 
+                // -- Personal Details -- //
                 CardFileInputStream dg1In = service.getInputStream(PassportService.EF_DG1);
-                dg1File = new DG1File(dg1In);
+                DG1File dg1File = new DG1File(dg1In);
 
+                MRZInfo mrzInfo = dg1File.getMRZInfo();
+                personDetails.setName(mrzInfo.getSecondaryIdentifier().replace("<", " ").trim());
+                personDetails.setSurname(mrzInfo.getPrimaryIdentifier().replace("<", " ").trim());
+                personDetails.setPersonalNumber(mrzInfo.getPersonalNumber());
+                personDetails.setGender(mrzInfo.getGender().toString());
+                personDetails.setBirthDate(DateUtil.convertFromMrzDate(mrzInfo.getDateOfBirth()));
+                personDetails.setExpiryDate(DateUtil.convertFromMrzDate(mrzInfo.getDateOfExpiry()));
+                personDetails.setSerialNumber(mrzInfo.getDocumentNumber());
+                personDetails.setNationality(mrzInfo.getNationality());
+                personDetails.setIssuerAuthority(mrzInfo.getIssuingState());
+
+                if("I".equals(mrzInfo.getDocumentCode())) {
+                    docType = DocType.ID_CARD;
+                } else if("P".equals(mrzInfo.getDocumentCode())) {
+                    docType = DocType.PASSPORT;
+                }
+
+                // -- Face Image -- //
                 CardFileInputStream dg2In = service.getInputStream(PassportService.EF_DG2);
-                dg2File = new DG2File(dg2In);
+                DG2File dg2File = new DG2File(dg2In);
 
-                List<FaceImageInfo> allFaceImageInfos = new ArrayList<>();
                 List<FaceInfo> faceInfos = dg2File.getFaceInfos();
+                List<FaceImageInfo> allFaceImageInfos = new ArrayList<>();
                 for (FaceInfo faceInfo : faceInfos) {
                     allFaceImageInfos.addAll(faceInfo.getFaceImageInfos());
                 }
 
                 if (!allFaceImageInfos.isEmpty()) {
                     FaceImageInfo faceImageInfo = allFaceImageInfos.iterator().next();
-
-                    int imageLength = faceImageInfo.getImageLength();
-                    DataInputStream dataInputStream = new DataInputStream(faceImageInfo.getImageInputStream());
-                    byte[] buffer = new byte[imageLength];
-                    dataInputStream.readFully(buffer, 0, imageLength);
-                    InputStream inputStream = new ByteArrayInputStream(buffer, 0, imageLength);
-
-                    bitmap = ImageUtil.decodeImage(
-                            MainActivity.this, faceImageInfo.getMimeType(), inputStream);
-                    imageBase64 = Base64.encodeToString(buffer, Base64.DEFAULT);
+                    Image image = ImageUtil.getImage(MainActivity.this, faceImageInfo);
+                    personDetails.setFaceImage(image.getBitmapImage());
+                    personDetails.setFaceImageBase64(image.getBase64Image());
                 }
+
+                // -- Fingerprint (if exist)-- //
+                try {
+                    CardFileInputStream dg3In = service.getInputStream(PassportService.EF_DG3);
+                    DG3File dg3File = new DG3File(dg3In);
+
+                    List<FingerInfo> fingerInfos = dg3File.getFingerInfos();
+                    List<FingerImageInfo> allFingerImageInfos = new ArrayList<>();
+                    for (FingerInfo fingerInfo : fingerInfos) {
+                        allFingerImageInfos.addAll(fingerInfo.getFingerImageInfos());
+                    }
+
+                    List<Bitmap> fingerprintsImage = new ArrayList<>();
+
+                    if (!allFingerImageInfos.isEmpty()) {
+
+                        for(FingerImageInfo fingerImageInfo : allFingerImageInfos) {
+                            Image image = ImageUtil.getImage(MainActivity.this, fingerImageInfo);
+                            fingerprintsImage.add(image.getBitmapImage());
+                        }
+
+                        personDetails.setFingerprints(fingerprintsImage);
+
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, e);
+                }
+
+                // -- Portrait Picture -- //
+                try {
+                    CardFileInputStream dg5In = service.getInputStream(PassportService.EF_DG5);
+                    DG5File dg5File = new DG5File(dg5In);
+
+                    List<DisplayedImageInfo> displayedImageInfos = dg5File.getImages();
+                    if (!displayedImageInfos.isEmpty()) {
+                        DisplayedImageInfo displayedImageInfo = displayedImageInfos.iterator().next();
+                        Image image = ImageUtil.getImage(MainActivity.this, displayedImageInfo);
+                        personDetails.setPortraitImage(image.getBitmapImage());
+                        personDetails.setPortraitImageBase64(image.getBase64Image());
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, e);
+                }
+
+                // -- Signature (if exist) -- //
+                try {
+                    CardFileInputStream dg7In = service.getInputStream(PassportService.EF_DG7);
+                    DG7File dg7File = new DG7File(dg7In);
+
+                    List<DisplayedImageInfo> signatureImageInfos = dg7File.getImages();
+                    if (!signatureImageInfos.isEmpty()) {
+                        DisplayedImageInfo displayedImageInfo = signatureImageInfos.iterator().next();
+                        Image image = ImageUtil.getImage(MainActivity.this, displayedImageInfo);
+                        personDetails.setPortraitImage(image.getBitmapImage());
+                        personDetails.setPortraitImageBase64(image.getBase64Image());
+                    }
+
+                } catch (Exception e) {
+                    Log.w(TAG, e);
+                }
+
+                // -- Additional Details (if exist) -- //
+                try {
+                    CardFileInputStream dg11In = service.getInputStream(PassportService.EF_DG11);
+                    DG11File dg11File = new DG11File(dg11In);
+
+                    if(dg11File.getLength() > 0) {
+                        additionalPersonDetails.setCustodyInformation(dg11File.getCustodyInformation());
+                        additionalPersonDetails.setNameOfHolder(dg11File.getNameOfHolder());
+                        additionalPersonDetails.setFullDateOfBirth(dg11File.getFullDateOfBirth());
+                        additionalPersonDetails.setOtherNames(dg11File.getOtherNames());
+                        additionalPersonDetails.setOtherValidTDNumbers(dg11File.getOtherValidTDNumbers());
+                        additionalPersonDetails.setPermanentAddress(dg11File.getPermanentAddress());
+                        additionalPersonDetails.setPersonalNumber(dg11File.getPersonalNumber());
+                        additionalPersonDetails.setPersonalSummary(dg11File.getPersonalSummary());
+                        additionalPersonDetails.setPlaceOfBirth(dg11File.getPlaceOfBirth());
+                        additionalPersonDetails.setProfession(dg11File.getProfession());
+                        additionalPersonDetails.setProofOfCitizenship(dg11File.getProofOfCitizenship());
+                        additionalPersonDetails.setTag(dg11File.getTag());
+                        additionalPersonDetails.setTagPresenceList(dg11File.getTagPresenceList());
+                        additionalPersonDetails.setTelephone(dg11File.getTelephone());
+                        additionalPersonDetails.setTitle(dg11File.getTitle());
+                    }
+                } catch (Exception e) {
+                    Log.w(TAG, e);
+                }
+
+                // -- Document Public Key -- //
+                try {
+                    CardFileInputStream dg15In = service.getInputStream(PassportService.EF_DG15);
+                    DG15File dg15File = new DG15File(dg15In);
+                    PublicKey publicKey = dg15File.getPublicKey();
+                    eDocument.setDocPublicKey(publicKey);
+                } catch (Exception e) {
+                    Log.w(TAG, e);
+                }
+
+                eDocument.setDocType(docType);
+                eDocument.setPersonDetails(personDetails);
+                eDocument.setAdditionalPersonDetails(additionalPersonDetails);
 
             } catch (Exception e) {
                 return e;
@@ -295,51 +415,35 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         @Override
-        protected void onPostExecute(Exception result) {
+        protected void onPostExecute(Exception exception) {
             mainLayout.setVisibility(View.VISIBLE);
             loadingLayout.setVisibility(View.GONE);
 
-            if (result == null) {
-                MRZInfo mrzInfo = dg1File.getMRZInfo();
-                setImage(bitmap);
-                setResultDatasToView(mrzInfo);
+            if (exception == null) {
+                setResultToView(eDocument);
             } else {
-                Snackbar.make(mainLayout, StringUtil.exceptionStack(result), Snackbar.LENGTH_LONG).show();
+                Snackbar.make(mainLayout, exception.getLocalizedMessage(), Snackbar.LENGTH_LONG).show();
             }
         }
 
     }
 
-    private void setImage(Bitmap bitmap) {
-        if (bitmap != null) {
-            double ratio = 400.0 / bitmap.getHeight();
-            int targetHeight = (int) (bitmap.getHeight() * ratio);
-            int targetWidth = (int) (bitmap.getWidth() * ratio);
-            bitmap = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, false);
-            ivPhoto.setImageBitmap(bitmap);
-        }
-    }
+    private void setResultToView(EDocument eDocument) {
 
-    private void setResultDatasToView(MRZInfo mrzInfo) {
+        Bitmap image = ImageUtil.scaleImage(eDocument.getPersonDetails().getFaceImage());
 
-        String result  = "NAME: " + mrzInfo.getSecondaryIdentifier().replace("<", " ").trim() + "\n";
-        result += "SURNAME: " + mrzInfo.getPrimaryIdentifier().replace("<", " ").trim() + "\n";
-        result += "PERSONAL NUMBER: " + mrzInfo.getPersonalNumber() + "\n";
-        result += "GENDER: " + mrzInfo.getGender().toString() + "\n";
-        result += "BIRTH DATE: " + DateUtil.convertFromMrzDate(mrzInfo.getDateOfBirth()) + "\n";
-        result += "EXPIRY DATE: " + DateUtil.convertFromMrzDate(mrzInfo.getDateOfExpiry()) + "\n";
-        result += "SERIAL NUMBER: " + mrzInfo.getDocumentNumber() + "\n";
-        result += "NATIONALITY: " + mrzInfo.getIssuingState() + "\n";
+        ivPhoto.setImageBitmap(image);
 
-        String documentType = "N/A";
-        if("I".equals(mrzInfo.getDocumentCode())) {
-            documentType = "ID Card";
-        } else if("P".equals(mrzInfo.getDocumentCode())) {
-            documentType = "Passport";
-        }
-
-        result += "DOC TYPE: " + documentType + "\n";
-        result += "ISSUER AUTHORITY: " + mrzInfo.getIssuingState() + "\n";
+        String result  = "NAME: " + eDocument.getPersonDetails().getName() + "\n";
+        result += "SURNAME: " + eDocument.getPersonDetails().getSurname() + "\n";
+        result += "PERSONAL NUMBER: " + eDocument.getPersonDetails().getPersonalNumber() + "\n";
+        result += "GENDER: " + eDocument.getPersonDetails().getGender() + "\n";
+        result += "BIRTH DATE: " + eDocument.getPersonDetails().getBirthDate() + "\n";
+        result += "EXPIRY DATE: " + eDocument.getPersonDetails().getExpiryDate() + "\n";
+        result += "SERIAL NUMBER: " + eDocument.getPersonDetails().getSerialNumber() + "\n";
+        result += "NATIONALITY: " + eDocument.getPersonDetails().getNationality() + "\n";
+        result += "DOC TYPE: " + eDocument.getDocType().name() + "\n";
+        result += "ISSUER AUTHORITY: " + eDocument.getPersonDetails().getIssuerAuthority() + "\n";
 
         tvResult.setText(result);
     }
@@ -348,7 +452,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         ivPhoto.setImageBitmap(null);
         tvResult.setText("");
     }
-
 
     private void requestPermissionForCamera() {
         String[] permissions = { Manifest.permission.CAMERA };

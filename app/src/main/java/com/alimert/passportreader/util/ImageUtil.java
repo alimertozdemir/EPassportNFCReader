@@ -19,10 +19,14 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.util.Base64;
 
+import org.jmrtd.lds.AbstractImageInfo;
 import org.jnbis.WsqDecoder;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -34,6 +38,37 @@ import jj2000.j2k.decoder.Decoder;
 import jj2000.j2k.util.ParameterList;
 
 public class ImageUtil {
+
+    public static Image getImage(Context context, AbstractImageInfo imageInfo) {
+        Image image = new Image();
+        int imageLength = imageInfo.getImageLength();
+        DataInputStream dataInputStream = new DataInputStream(imageInfo.getImageInputStream());
+        byte[] buffer = new byte[imageLength];
+        try {
+            dataInputStream.readFully(buffer, 0, imageLength);
+            InputStream inputStream = new ByteArrayInputStream(buffer, 0, imageLength);
+            Bitmap bitmapImage = ImageUtil.decodeImage(context, imageInfo.getMimeType(), inputStream);
+            image.setBitmapImage(bitmapImage);
+            String base64Image = Base64.encodeToString(buffer, Base64.DEFAULT);
+            image.setBase64Image(base64Image);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return image;
+    }
+
+    public static Bitmap scaleImage(Bitmap bitmap) {
+        Bitmap bitmapImage = null;
+        if (bitmap != null) {
+            double ratio = 400.0 / bitmap.getHeight();
+            int targetHeight = (int) (bitmap.getHeight() * ratio);
+            int targetWidth = (int) (bitmap.getWidth() * ratio);
+            bitmapImage = Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, false);
+        }
+
+        return bitmapImage;
+    }
 
     public static Bitmap decodeImage(Context context, String mimeType, InputStream inputStream) throws IOException {
 
