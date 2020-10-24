@@ -31,6 +31,8 @@ public class CaptureActivity extends AppCompatActivity implements TextRecognitio
     public static final String MRZ_RESULT = "MRZ_RESULT";
     public static final String DOC_TYPE = "DOC_TYPE";
 
+    private DocType docType = DocType.OTHER;
+
     private static String TAG = CaptureActivity.class.getSimpleName();
 
     @Override
@@ -43,7 +45,7 @@ public class CaptureActivity extends AppCompatActivity implements TextRecognitio
         actionBar.setCustomView(R.layout.action_bar_title);
 
         if(getIntent().hasExtra(DOC_TYPE)) {
-            DocType docType = (DocType) getIntent().getSerializableExtra(DOC_TYPE);
+            docType = (DocType) getIntent().getSerializableExtra(DOC_TYPE);
             if(docType == DocType.PASSPORT) {
                 actionBar.hide();
                 setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
@@ -93,7 +95,7 @@ public class CaptureActivity extends AppCompatActivity implements TextRecognitio
             cameraSource.setFacing(CameraSource.CAMERA_FACING_BACK);
         }
 
-        cameraSource.setMachineLearningFrameProcessor(new TextRecognitionProcessor(this));
+        cameraSource.setMachineLearningFrameProcessor(new TextRecognitionProcessor(docType, this));
     }
 
     private void startCameraSource() {
