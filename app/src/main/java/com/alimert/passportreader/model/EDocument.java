@@ -7,6 +7,10 @@ public class EDocument {
     private DocType docType;
     private PersonDetails personDetails;
     private AdditionalPersonDetails additionalPersonDetails;
+    private boolean passiveAuth;
+    private boolean activeAuth;
+    private boolean chipAuth;
+    private boolean docSignatureValid;
     private PublicKey docPublicKey;
 
     public DocType getDocType() {
@@ -31,6 +35,38 @@ public class EDocument {
 
     public void setAdditionalPersonDetails(AdditionalPersonDetails additionalPersonDetails) {
         this.additionalPersonDetails = additionalPersonDetails;
+    }
+
+    public boolean isPassiveAuth() {
+        return passiveAuth;
+    }
+
+    public void setPassiveAuth(boolean passiveAuth) {
+        this.passiveAuth = passiveAuth;
+    }
+
+    public boolean isActiveAuth() {
+        return activeAuth;
+    }
+
+    public void setActiveAuth(boolean activeAuth) {
+        this.activeAuth = activeAuth;
+    }
+
+    public boolean isChipAuth() {
+        return chipAuth;
+    }
+
+    public void setChipAuth(boolean chipAuth) {
+        this.chipAuth = chipAuth;
+    }
+
+    public boolean isDocSignatureValid() {
+        return docSignatureValid;
+    }
+
+    public void setDocSignatureValid(boolean docSignatureValid) {
+        this.docSignatureValid = docSignatureValid;
     }
 
     public PublicKey getDocPublicKey() {
