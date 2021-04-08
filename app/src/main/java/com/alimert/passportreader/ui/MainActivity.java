@@ -106,7 +106,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private TextView tvResult;
     private ImageView ivPhoto;
 
-    private String passportNumber, expirationDate , birthDate;
+    private String passportNumber, expirationDate, birthDate;
     private DocType docType;
 
     @Override
@@ -163,7 +163,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
             switch (requestCode) {
                 case APP_CAMERA_ACTIVITY_REQUEST_CODE:
                     MRZInfo mrzInfo = (MRZInfo) data.getSerializableExtra(MRZ_RESULT);
-                    if(mrzInfo != null) {
+                    if (mrzInfo != null) {
                         setMrzData(mrzInfo);
                     } else {
                         Snackbar.make(loadingLayout, R.string.error_input, Snackbar.LENGTH_SHORT).show();
@@ -187,6 +187,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 requestPermissionForCamera();
                 break;
             case R.id.btn_read:
+                docType = DocType.ID_CARD;
                 readCard();
                 break;
             default:
@@ -229,7 +230,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         && birthDate != null && !birthDate.isEmpty()) {
                     BACKeySpec bacKey = new BACKey(passportNumber, birthDate, expirationDate);
                     IsoDep isoDep = IsoDep.get(tag);
-                    isoDep.setTimeout(5*1000);
+                    isoDep.setTimeout(5 * 2000);
                     new ReadTask(isoDep, bacKey).execute();
                     mainLayout.setVisibility(View.GONE);
                     imageLayout.setVisibility(View.GONE);
@@ -287,6 +288,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     try {
                         service.getInputStream(PassportService.EF_COM).read();
                     } catch (Exception e) {
+                        e.printStackTrace();
                         service.doBAC(bacKey);
                     }
                 }
@@ -322,6 +324,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                     try {
                         digest = MessageDigest.getInstance(signerInfoDigestAlgorithm);
                     } catch (Exception e) {
+                        e.printStackTrace();
                         digest = MessageDigest.getInstance(signerInfoDigestAlgorithm, new BouncyCastleProvider());
                     }
 
@@ -375,10 +378,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 personDetails.setNationality(mrzInfo.getNationality());
                 personDetails.setIssuerAuthority(mrzInfo.getIssuingState());
 
-                if("I".equals(mrzInfo.getDocumentCode())) {
+                if ("I".equals(mrzInfo.getDocumentCode())) {
                     docType = DocType.ID_CARD;
                     encodedDg1File = StringUtil.fixPersonalNumberMrzData(encodedDg1File, mrzInfo.getPersonalNumber());
-                } else if("P".equals(mrzInfo.getDocumentCode())) {
+                } else if ("P".equals(mrzInfo.getDocumentCode())) {
                     docType = DocType.PASSPORT;
                 }
 
@@ -448,7 +451,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     if (!allFingerImageInfos.isEmpty()) {
 
-                        for(FingerImageInfo fingerImageInfo : allFingerImageInfos) {
+                        for (FingerImageInfo fingerImageInfo : allFingerImageInfos) {
                             Image image = ImageUtil.getImage(MainActivity.this, fingerImageInfo);
                             fingerprintsImage.add(image.getBitmapImage());
                         }
@@ -457,6 +460,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                     Log.w(TAG, e);
                 }
 
@@ -531,7 +535,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                         hashesMatched = false;
                     }
 
-                    if(dg11File.getLength() > 0) {
+                    if (dg11File.getLength() > 0) {
                         additionalPersonDetails.setCustodyInformation(dg11File.getCustodyInformation());
                         additionalPersonDetails.setNameOfHolder(dg11File.getNameOfHolder());
                         additionalPersonDetails.setFullDateOfBirth(dg11File.getFullDateOfBirth());
@@ -603,7 +607,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                             }
                         }
 
-                        for (ChipAuthenticationPublicKeyInfo chipAuthenticationPublicKeyInfo: chipAuthenticationPublicKeyInfos) {
+                        for (ChipAuthenticationPublicKeyInfo chipAuthenticationPublicKeyInfo : chipAuthenticationPublicKeyInfos) {
                             if (chipAuthenticationInfo != null) {
                                 EACCAResult eaccaResult = service.doEACCA(chipAuthenticationInfo.getKeyId(), chipAuthenticationInfo.getObjectIdentifier(), chipAuthenticationInfo.getProtocolOIDString(), chipAuthenticationPublicKeyInfo.getSubjectPublicKey());
                                 eaccaResults.add(eaccaResult);
@@ -679,6 +683,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         @Override
         protected void onPostExecute(Exception exception) {
+            if (exception != null) exception.printStackTrace();
             mainLayout.setVisibility(View.VISIBLE);
             loadingLayout.setVisibility(View.GONE);
 
@@ -697,7 +702,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         ivPhoto.setImageBitmap(image);
 
-        String result  = "NAME: " + eDocument.getPersonDetails().getName() + "\n";
+        String result = "NAME: " + eDocument.getPersonDetails().getName() + "\n";
         result += "SURNAME: " + eDocument.getPersonDetails().getSurname() + "\n";
         result += "PERSONAL NUMBER: " + eDocument.getPersonDetails().getPersonalNumber() + "\n";
         result += "GENDER: " + eDocument.getPersonDetails().getGender() + "\n";
@@ -718,7 +723,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     }
 
     private void requestPermissionForCamera() {
-        String[] permissions = { Manifest.permission.CAMERA };
+        String[] permissions = {Manifest.permission.CAMERA};
         boolean isPermissionGranted = PermissionUtil.hasPermissions(this, permissions);
 
         if (!isPermissionGranted) {

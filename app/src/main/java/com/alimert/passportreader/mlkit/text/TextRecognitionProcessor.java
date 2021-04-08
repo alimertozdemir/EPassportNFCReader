@@ -119,7 +119,7 @@ public class TextRecognitionProcessor {
         GraphicOverlay.Graphic textGraphic = new TextGraphic(graphicOverlay, element, Color.GREEN);
         scannedTextBuffer += element.getText();
 
-        if(docType == DocType.ID_CARD) {
+        if (docType == DocType.ID_CARD) {
 
             Pattern patternIDCardTD1Line1 = Pattern.compile(ID_CARD_TD_1_LINE_1_REGEX);
             Matcher matcherIDCardTD1Line1 = patternIDCardTD1Line1.matcher(scannedTextBuffer);
@@ -127,17 +127,26 @@ public class TextRecognitionProcessor {
             Pattern patternIDCardTD1Line2 = Pattern.compile(ID_CARD_TD_1_LINE_2_REGEX);
             Matcher matcherIDCardTD1Line2 = patternIDCardTD1Line2.matcher(scannedTextBuffer);
 
-            if(matcherIDCardTD1Line1.find() && matcherIDCardTD1Line2.find()) {
+            Pattern patternIDCardTD1Line3 = Pattern.compile(ID_CARD_TD_1_LINE_3_REGEX);
+            Matcher matcherIDCardTD1Line3 = patternIDCardTD1Line3.matcher(scannedTextBuffer);
+
+            if (matcherIDCardTD1Line1.find() && matcherIDCardTD1Line2.find() && matcherIDCardTD1Line3.find()) {
                 graphicOverlay.add(textGraphic);
                 String line1 = matcherIDCardTD1Line1.group(0);
                 String line2 = matcherIDCardTD1Line2.group(0);
+                String line3 = matcherIDCardTD1Line3.group(0);
+
+
+                Log.d(TAG, "filterScannedText: Read line1: " + line1);
+                Log.d(TAG, "filterScannedText: Read line2: " + line2);
+                Log.d(TAG, "filterScannedText: Read line3: " + line3);
+
                 if (line1.indexOf(TYPE_ID_CARD) > 0) {
                     line1 = line1.substring(line1.indexOf(TYPE_ID_CARD));
                     String documentNumber = line1.substring(5, 14);
                     documentNumber = documentNumber.replace("O", "0");
                     String dateOfBirthDay = line2.substring(0, 6);
                     String expiryDate = line2.substring(8, 14);
-
                     Log.d(TAG, "Scanned Text Buffer ID Card ->>>> " + "Doc Number: " + documentNumber + " DateOfBirth: " + dateOfBirthDay + " ExpiryDate: " + expiryDate);
 
                     MRZInfo mrzInfo = buildTempMrz(documentNumber, dateOfBirthDay, expiryDate);
@@ -154,7 +163,7 @@ public class TextRecognitionProcessor {
             Pattern patternPassportTD3Line2 = Pattern.compile(PASSPORT_TD_3_LINE_2_REGEX);
             Matcher matcherPassportTD3Line2 = patternPassportTD3Line2.matcher(scannedTextBuffer);
 
-            if(matcherPassportTD3Line1.find() && matcherPassportTD3Line2.find()) {
+            if (matcherPassportTD3Line1.find() && matcherPassportTD3Line2.find()) {
                 graphicOverlay.add(textGraphic);
                 String line2 = matcherPassportTD3Line2.group(0);
                 String documentNumber = line2.substring(0, 9);
@@ -203,13 +212,13 @@ public class TextRecognitionProcessor {
 
     private void finishScanning(final MRZInfo mrzInfo) {
         try {
-            if(isMrzValid(mrzInfo)) {
+            if (isMrzValid(mrzInfo)) {
                 // Delay returning result 1 sec. in order to make mrz text become visible on graphicOverlay by user
                 // You want to call 'resultListener.onSuccess(mrzInfo)' without no delay
                 new Handler().postDelayed(() -> resultListener.onSuccess(mrzInfo), 1000);
             }
 
-        } catch(Exception exp) {
+        } catch (Exception exp) {
             Log.d(TAG, "MRZ DATA is not valid");
         }
     }
@@ -217,7 +226,7 @@ public class TextRecognitionProcessor {
     private MRZInfo buildTempMrz(String documentNumber, String dateOfBirth, String expiryDate) {
         MRZInfo mrzInfo = null;
         try {
-            mrzInfo = new MRZInfo("P","NNN", "", "", documentNumber, "NNN", dateOfBirth, Gender.UNSPECIFIED, expiryDate, "");
+            mrzInfo = new MRZInfo("P", "NNN", "", "", documentNumber, "NNN", dateOfBirth, Gender.UNSPECIFIED, expiryDate, "");
         } catch (Exception e) {
             Log.d(TAG, "MRZInfo error : " + e.getLocalizedMessage());
         }
@@ -233,6 +242,7 @@ public class TextRecognitionProcessor {
 
     public interface ResultListener {
         void onSuccess(MRZInfo mrzInfo);
+
         void onError(Exception exp);
     }
 }
